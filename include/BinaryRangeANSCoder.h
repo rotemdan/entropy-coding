@@ -80,7 +80,7 @@ class BinaryRangeANSCoder {
 		}
 
 		// Reverse flushed bytes so the decoder can read them in forward order,
-		// to correctly recreate the stats seen during encoding, in reverse order.
+		// to correctly recreate the states seen during encoding, in reverse order.
 		std::reverse(outputBytes->begin(), outputBytes->end());
 
 		// Return the final state
