@@ -9,7 +9,7 @@ struct StateAndSymbol {
     uint8_t symbol;
 };
 
-// Binary Range Asymmetric Numeral Systems rANS encoder and decoder
+// Binary Range Asymmetric Numeral Systems (rANS) encoder and decoder
 class BinaryRangeANSCoder {
    private:
 	double probabilityOf0;
