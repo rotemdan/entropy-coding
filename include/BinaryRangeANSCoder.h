@@ -53,6 +53,7 @@ class BinaryRangeANSCoder {
 	uint64_t Encode(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
 		uint64_t state = totalFrequency;
 
+		// Iterate message bits in reverse order
 		for (int64_t readPosition = inputBitArray->BitLength() - 1; readPosition >= 0; readPosition--) {
 			// Take message bit
 			auto symbol = inputBitArray->ReadBitAt(readPosition);
@@ -147,13 +148,13 @@ class BinaryRangeANSCoder {
 	}
 
 	// Looks up encoder transition in its table
-	// Doesn't check if the table is null
+	// Doesn't check if the table is empty
 	inline uint64_t LookupEncoderStateTransitionFor(uint64_t state, uint8_t symbol) {
 		return encoderStateTransitionTable.at((state * 2) + symbol);
 	}
 
 	// Looks up decoder transition in its table
-	// Doesn't check if the table is null
+	// Doesn't check if the table is empty
 	inline StateAndSymbol LookupDecoderStateTransitionFor(uint64_t state) {
 		return decoderStateTransitionTable.at(state);
 	}
