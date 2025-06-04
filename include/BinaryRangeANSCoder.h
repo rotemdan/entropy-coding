@@ -26,26 +26,27 @@ class BinaryRangeANSCoder {
    public:
 	BinaryRangeANSCoder(double probabilityOf1, uint8_t totalRangeSizeInBits) {
 		if (totalRangeSizeInBits < 1 || totalRangeSizeInBits > 24) {
-			throw std::exception("Total range bit size must be in the range of 1 to 24 (inclusive).");
+			throw std::exception("Total range bit size must be between 1 and 24 (inclusive).");
 		}
 
-		// Probabilities of 0 symbol
+		// Probability of symbol 0
 		double probabilityOf0 = 1.0 - probabilityOf1;
 
 		// Total size of the integer range, in bits.
 		// Determines how "quantized" the symbol probabilities would be.
-		// Usable values are 8, 12, 16, 20, 24 bits.
+		// Common values are 8, 12, 16, 20 and 24 bits.
 		//
-		// Maximum supported value is 24, since it implies a maximally sized 32-bit state space.
+		// Maximum supported value is 24, since it implies the state would use the full 32-bit integer range.
 		//
 		// Larger range means more expensive table construction, and larger table memory size.
+		// Table size is 256 time larger than the range, or 8 bits more.
 		//
 		// If you intend to use table-base encoding / decoding methods,
 		// try to use a smaller range size, like 8 - 12 bits.
 		this->totalRangeSizeInBits = totalRangeSizeInBits;
 
 		// Total frequency of all symbols
-		this->totalFrequency = 1ULL << totalRangeSizeInBits;
+		this->totalFrequency = 1u << totalRangeSizeInBits;
 
 		// Compute frequency of symbol 0
 		auto frequencyOf0 = uint32_t(round(probabilityOf0 * totalFrequency));
@@ -95,7 +96,7 @@ class BinaryRangeANSCoder {
 
 			while (state >= flushThreshold) {
 				outputBytes->push_back(state & 255);
-				state = state >> 8;
+				state >>= 8;
 			}
 
 			// Compute the state transition and transition to the new state
@@ -176,7 +177,7 @@ class BinaryRangeANSCoder {
 
 			while (state >= flushThreshold) {
 				outputBytes->push_back(state & 255);
-				state = state >> 8;
+				state >>= 8;
 			}
 
 			state = LookupEncoderStateTransitionFor(state, symbol);
@@ -274,7 +275,7 @@ class BinaryRangeANSCoder {
 		}
 
 		// The size of the encoder table is the total frequency times 256.
-		// A state value cannot be equal to or greater than this value.
+		// A state value cannot be greater than or equal to this value.
 		auto stateCount = totalFrequency * 256;
 
 		// Reserve memory
