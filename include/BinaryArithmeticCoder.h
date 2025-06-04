@@ -11,7 +11,7 @@ namespace BinaryArithmeticCoder {
 // doesn't cause a loss in accuracy.
 //
 // A value of 53 should be safe since the maximum safe integer for float64 is 2^53 - 1
-inline constexpr uint64_t rangeBitCount = 53;
+inline constexpr int64_t rangeBitCount = 53;
 
 // Range constants. Map the [0.0, 1.0) fractional range to integers.
 inline constexpr uint64_t lowest = 0;
@@ -38,7 +38,7 @@ void Encode(BitArray* inputBitArray,
 	uint64_t pendingBitCount = 0;
 
 	// Read position
-	uint64_t readPosition = 0;
+	int64_t readPosition = 0;
 
 	// Outputs a bit
 	auto outputBit = [&](uint8_t bit) { outputBitStream->WriteBit(bit); };
@@ -53,7 +53,7 @@ void Encode(BitArray* inputBitArray,
 	};
 
 	// Encode bit by bit
-	for (uint64_t readPosition = 0; readPosition < inputBitLength; readPosition++) {
+	for (int64_t readPosition = 0; readPosition < inputBitLength; readPosition++) {
 		// Narrow current interval
 		{
 			// Read new bit from input
@@ -154,8 +154,8 @@ void Decode(BitArray* inputBitArray,
 	uint64_t value = lowest;
 
 	// Read and write positions
-	uint64_t readPosition = 0;
-	uint64_t writePosition = 0;
+	int64_t readPosition = 0;
+	int64_t writePosition = 0;
 
 	auto outputBitLength = outputBitArray->BitLength();
 

@@ -5,10 +5,10 @@
 class OutputBitStream {
    private:
 	std::vector<uint8_t> bytes;
-	uint64_t bitLength = 0;
+	int64_t bitLength = 0;
 
    public:
-	OutputBitStream(uint64_t initialBitCapacity) {
+	OutputBitStream(int64_t initialBitCapacity) {
 		bytes.reserve((initialBitCapacity + 7) / 8);
 	}
 
@@ -27,9 +27,9 @@ class OutputBitStream {
 		bitLength += 1;
 	}
 
-	uint64_t BitLength() { return bitLength; }
+	int64_t BitLength() { return bitLength; }
 
-	uint64_t ByteLength() { return bytes.size(); }
+	int64_t ByteLength() { return bytes.size(); }
 
 	uint8_t* Data() { return bytes.data(); }
 };
