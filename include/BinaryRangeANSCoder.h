@@ -140,10 +140,10 @@ class BinaryRangeANSCoder {
 	// attempts to merge both methods seemed to have significantly degraded performance.
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Encode bits using table. Requires encoder transition table to be built first.
+	// Encode bits using table. Requires encoder state transition table to be built first.
 	uint64_t EncodeUsingTable(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
 		if (encoderStateTransitionTable.size() == 0) {
-			throw std::exception("Encoder transition table has not been built.");
+			throw std::exception("Encoder state transition table has not been built.");
 		}
 
 		uint64_t state = totalFrequency;
@@ -164,14 +164,14 @@ class BinaryRangeANSCoder {
 		return state;
 	}
 
-	// Decode using table. Requires decoder transition table to be built first.
+	// Decode using table. Requires decoder state transition table to be built first.
 	void DecodeUsingTable(uint8_t* encodedBytes,
 						  uint64_t encodedByteLength,
 						  uint64_t state,
 						  BitArray* outputBitArray) {
 
 		if (decoderStateTransitionTable.size() == 0) {
-			throw std::exception("Decoder transition table has not built.");
+			throw std::exception("Decoder state transition table has not built.");
 		}
 
 		uint64_t outputBitLength = outputBitArray->BitLength();
