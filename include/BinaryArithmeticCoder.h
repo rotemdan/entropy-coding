@@ -4,22 +4,24 @@
 #include "OutputBitStream.h"
 
 // Binary arithmetic coder, based mostly on integer arithmetic.
+namespace BinaryArithmeticCoder {
 
 // Range bit count should ensure that when the interval range (high - low) is
 // converted to float64, during computation of the boundary, the resulting floating point number
 // doesn't cause a loss in accuracy.
 //
 // A value of 53 should be safe since the maximum safe integer for float64 is 2^53 - 1
-const uint64_t rangeBitCount = 53;
+inline constexpr uint64_t rangeBitCount = 53;
 
-const uint64_t lowest = 0;
-const uint64_t highest = (1ULL << rangeBitCount);
+// Range constants. Map the [0.0, 1.0) fractional range to integers.
+inline constexpr uint64_t lowest = 0;
+inline constexpr uint64_t highest = (1ULL << rangeBitCount);
 
-const uint64_t quarterRange = highest / 4;
-const uint64_t halfRange = highest / 2;
-const uint64_t threeQuartersRange = highest - quarterRange;
+inline constexpr uint64_t quarterRange = highest / 4;
+inline constexpr uint64_t halfRange = highest / 2;
+inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
 
-void ArithmeticEncodeBitStream(BitArray* inputBitArray,
+void Encode(BitArray* inputBitArray,
 							   OutputBitStream* outputBitStream,
 							   double probabilityOf1) {
 	// Input bit array length
@@ -134,9 +136,9 @@ void ArithmeticEncodeBitStream(BitArray* inputBitArray,
 	}
 }
 
-void ArithmeticDecodeBitStream(BitArray* inputBitArray,
-							   BitArray* outputBitArray,
-							   double probabilityOf1) {
+void Decode(BitArray* inputBitArray,
+			BitArray* outputBitArray,
+			double probabilityOf1) {
 
 	// Input bit array length
 	auto inputBitLength = inputBitArray->BitLength();
@@ -234,4 +236,6 @@ void ArithmeticDecodeBitStream(BitArray* inputBitArray,
 			}
 		}
 	}
+}
+
 }

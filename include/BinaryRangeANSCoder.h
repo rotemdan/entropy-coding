@@ -39,7 +39,7 @@ class BinaryRangeANSCoder {
 		auto frequencyOf0 = uint64_t(round(probabilityOf0 * totalFrequency));
 
 		// Ensure frequencies are at least 1
-		frequencyOf0 = clip(frequencyOf0, 1ULL, totalFrequency - 1);
+		frequencyOf0 = EntropyCodingUtilities::clip(frequencyOf0, 1ULL, totalFrequency - 1);
 
 		// Lookup table for frequencies of symbols
 		frequencyOf[0] = frequencyOf0;

@@ -1,5 +1,7 @@
 #pragma once
 
+namespace EntropyCodingUtilities {
+
 template <typename T>
 T clip(T num, T min, T max) {
 	if (num < min) {
@@ -11,4 +13,6 @@ T clip(T num, T min, T max) {
 	}
 
 	return num;
+}
+
 }
