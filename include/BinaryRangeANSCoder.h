@@ -158,7 +158,7 @@ class BinaryRangeANSCoder {
 	// Separated to ensure methods get optimized correctly.
 	//
 	// Although the code duplication is not very desirable, attempts to merge
-	// table-based and non-table-base methods seemed to have significantly
+	// table-based and non table-based methods seemed to have significantly
 	// degraded performance.
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
