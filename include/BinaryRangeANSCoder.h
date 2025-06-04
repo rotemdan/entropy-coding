@@ -101,7 +101,7 @@ class BinaryRangeANSCoder {
 		// Return the final state.
 		//
 		// The final state is guaranteed to be in the range [0, totalFrequency * 256).
-		// So, for a state total frquency space of 8 bits, it will fit 16 bits.
+		// So, for a total frquency space of 8 bits, it will fit 16 bits.
 		// For space of 16 bits, it will fit 24 bits.
 		// For 24 bits, it will fit 32 bits, etc.
 		//
