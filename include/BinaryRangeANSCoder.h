@@ -4,10 +4,8 @@
 #include "OutputBitStream.h"
 #include "Utilities.h"
 
-#include <cassert>
-
 struct StateAndSymbol {
-    uint64_t state;
+    uint32_t state;
     uint8_t symbol;
 };
 
@@ -15,43 +13,45 @@ struct StateAndSymbol {
 // with optional support for table-based processing (tANS).
 class BinaryRangeANSCoder {
    private:
-	double probabilityOf0;
-	double probabilityOf1;
+	uint32_t totalRangeSizeInBits;
+	uint32_t totalFrequency;
 
-	uint64_t totalFrequencySpaceBits;
-	uint64_t totalFrequency;
+	uint32_t frequencyOf[2];
+	uint32_t cumulativeFrequencyOf[2];
+	uint32_t encoderFlushThresholdOf[2];
 
-	uint64_t frequencyOf[2];
-	uint64_t cumulativeFrequencyOf[2];
-	uint64_t encoderFlushThresholdOf[2];
-
-	std::vector<uint64_t> encoderStateTransitionTable;
+	std::vector<uint32_t> encoderStateTransitionTable;
 	std::vector<StateAndSymbol> decoderStateTransitionTable;
 
    public:
-	BinaryRangeANSCoder(double probabilityOf1, int totalFrequencySpaceBits) {
-		// Probabilities of 0 and 1 symbols
-		this->probabilityOf0 = 1.0 - probabilityOf1;
-		this->probabilityOf1 = probabilityOf1;
+	BinaryRangeANSCoder(double probabilityOf1, uint8_t totalRangeSizeInBits) {
+		if (totalRangeSizeInBits < 1 || totalRangeSizeInBits > 24) {
+			throw std::exception("Total range bit size must be in the range of 1 to 24 (inclusive).");
+		}
 
-		// Total size of frequency space, in bits.
+		// Probabilities of 0 symbol
+		double probabilityOf0 = 1.0 - probabilityOf1;
+
+		// Total size of the integer range, in bits.
 		// Determines how "quantized" the symbol probabilities would be.
-		// Common values are 8, 12, 16, 20, 24 bits.
+		// Usable values are 8, 12, 16, 20, 24 bits.
 		//
-		// Larger space means more expensive table construction.
+		// Maximum supported value is 24, since it implies a maximally sized 32-bit state space.
+		//
+		// Larger range means more expensive table construction, and larger table memory size.
 		//
 		// If you intend to use table-base encoding / decoding methods,
-		// try to use a smaller space, like 8 - 12 bits.
-		this->totalFrequencySpaceBits = totalFrequencySpaceBits;
+		// try to use a smaller range size, like 8 - 12 bits.
+		this->totalRangeSizeInBits = totalRangeSizeInBits;
 
 		// Total frequency of all symbols
-		this->totalFrequency = 1ULL << totalFrequencySpaceBits;
+		this->totalFrequency = 1ULL << totalRangeSizeInBits;
 
 		// Compute frequency of symbol 0
-		auto frequencyOf0 = uint64_t(round(probabilityOf0 * totalFrequency));
+		auto frequencyOf0 = uint32_t(round(probabilityOf0 * totalFrequency));
 
 		// Ensure frequencies are at least 1
-		frequencyOf0 = EntropyCodingUtilities::clip(frequencyOf0, 1ULL, totalFrequency - 1);
+		frequencyOf0 = EntropyCodingUtilities::clip(frequencyOf0, 1u, totalFrequency - 1);
 
 		// Lookup table for frequencies of symbols
 		frequencyOf[0] = frequencyOf0;
@@ -71,8 +71,8 @@ class BinaryRangeANSCoder {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Encode message bits
-	uint64_t Encode(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
-		uint64_t state = totalFrequency;
+	uint32_t Encode(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
+		uint32_t state = totalFrequency;
 
 		// Iterate message bits in reverse order
 		for (int64_t readPosition = inputBitArray->BitLength() - 1; readPosition >= 0; readPosition--) {
@@ -109,32 +109,35 @@ class BinaryRangeANSCoder {
 		// Return the final state.
 		//
 		// The final state is guaranteed to be in the range [0, totalFrequency * 256).
-		// So, for a total frquency space of 8 bits, it will fit 16 bits.
-		// For space of 16 bits, it will fit 24 bits.
-		// For 24 bits, it will fit 32 bits, etc.
+		// So, for a range of 8 bits, it will fit 16 bits.
+		// For range of 16 bits, it will fit 24 bits.
+		// For 24 bits, it will fit 32 bits (maximum supported).
 		//
 		// For now, I don't serialize the state to bytes, because there are many
 		// ways to do so. For example, using plain fixed-length byte encodings,
 		// variable-length encodings, etc.
+		//
+		// Every range size would have a different serialization method that would be optimal
+		// for it, so it makes it difficult to find a one-fits-all solution.
 		return state;
 	}
 
 	// Decode bits given encoded bytes and state
 	void Decode(uint8_t* encodedBytes,
-				uint64_t encodedByteLength,
-				uint64_t state,
+				int64_t encodedByteLength,
+				uint32_t state,
 				BitArray* outputBitArray) {
 
 		auto outputBitLength = outputBitArray->BitLength();
 
-		uint64_t readPosition = 0;
+		int64_t readPosition = 0;
 
-		for (uint64_t writePosition = 0; writePosition < outputBitLength; writePosition++) {
+		for (int64_t writePosition = 0; writePosition < outputBitLength; writePosition++) {
 			// While state is smaller than the threshold, read a byte (aka "unflush") into the state.
 			//
 			// The threshold is the total frequency of all symbols.
 			while (state < totalFrequency && readPosition < encodedByteLength) {
-				state = (state << 8) | uint64_t(encodedBytes[readPosition++]);
+				state = (state << 8) | uint32_t(encodedBytes[readPosition++]);
 			}
 
 			// Compute the state transition
@@ -149,21 +152,22 @@ class BinaryRangeANSCoder {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	// Table based encoding and decoding methods.
+	// Table-based encoding and decoding methods.
 	//
 	// Separated to ensure methods get optimized correctly.
 	//
-	// Although the code duplication is not very desirable,
-	// attempts to merge both methods seemed to have significantly degraded performance.
+	// Although the code duplication is not very desirable, attempts to merge
+	// table-based and non-table-base methods seemed to have significantly
+	// degraded performance.
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Encode bits using table. Requires encoder state transition table to be built first.
-	uint64_t EncodeUsingTable(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
+	uint32_t EncodeUsingTable(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
 		if (!HasEncoderStateTransitionTable()) {
 			throw std::exception("Encoder state transition table has not been built.");
 		}
 
-		uint64_t state = totalFrequency;
+		uint32_t state = totalFrequency;
 
 		for (int64_t readPosition = inputBitArray->BitLength() - 1; readPosition >= 0; readPosition--) {
 			auto symbol = inputBitArray->ReadBitAt(readPosition);
@@ -185,21 +189,21 @@ class BinaryRangeANSCoder {
 
 	// Decode using table. Requires decoder state transition table to be built first.
 	void DecodeUsingTable(uint8_t* encodedBytes,
-						  uint64_t encodedByteLength,
-						  uint64_t state,
+						  int64_t encodedByteLength,
+						  uint32_t state,
 						  BitArray* outputBitArray) {
 
 		if (!HasDecoderStateTransitionTable()) {
 			throw std::exception("Decoder state transition table has not built.");
 		}
 
-		uint64_t outputBitLength = outputBitArray->BitLength();
+		int64_t outputBitLength = outputBitArray->BitLength();
 
-		uint64_t readPosition = 0;
+		int64_t readPosition = 0;
 
-		for (uint64_t writePosition = 0; writePosition < outputBitLength; writePosition++) {
+		for (int64_t writePosition = 0; writePosition < outputBitLength; writePosition++) {
 			while (state < totalFrequency && readPosition < encodedByteLength) {
-				state = (state << 8) | uint64_t(encodedBytes[readPosition++]);
+				state = (state << 8) | uint32_t(encodedBytes[readPosition++]);
 			}
 
 			auto stateTransitionResult = LookupDecoderStateTransitionFor(state);
@@ -215,33 +219,33 @@ class BinaryRangeANSCoder {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Given a starting state and symbol, compute the next encoder state
-	inline uint64_t ComputeEncoderStateTransitionFor(uint64_t state, uint8_t symbol) {
+	inline uint32_t ComputeEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
 		// Get symbol frequency and cumulative frequency
-		uint64_t frequencyOfSymbol = frequencyOf[symbol];
+		uint32_t frequencyOfSymbol = frequencyOf[symbol];
 
 		// Compute quotient and remainder based on the state and frequency of the symbol
-		uint64_t quotient = state / frequencyOfSymbol;
-		uint64_t remainder = state % frequencyOfSymbol;
+		uint32_t quotient = state / frequencyOfSymbol;
+		uint32_t remainder = state % frequencyOfSymbol;
 
 		// Compute the new state
-		uint64_t newState = (totalFrequency * quotient) + cumulativeFrequencyOf[symbol] + remainder;
+		uint32_t newState = (totalFrequency * quotient) + cumulativeFrequencyOf[symbol] + remainder;
 
 		return newState;
 	}
 
 	// Given a starting state, compute the next decoder state and the emitted symbol
-	inline StateAndSymbol ComputeDecoderStateTransitionFor(uint64_t state) {
+	inline StateAndSymbol ComputeDecoderStateTransitionFor(uint32_t state) {
 		// Compute quotient and remainder based on the state and total frequency.
 		//
 		// Optimized for bitwise operations since totalFrequency is guaranteed to be a power of two.
-		uint64_t quotient = state >> totalFrequencySpaceBits;
-		uint64_t remainder = state & (totalFrequency - 1);
+		uint32_t quotient = state >> totalRangeSizeInBits;
+		uint32_t remainder = state & (totalFrequency - 1);
 
 		// Find the decoded symbol based on the remainder
 		uint8_t decodedSymbol = remainder < cumulativeFrequencyOf[1] ? 0 : 1;
 
 		// Compute the new state
-		uint64_t newState = (frequencyOf[decodedSymbol] * quotient) - cumulativeFrequencyOf[decodedSymbol] + remainder;
+		uint32_t newState = (frequencyOf[decodedSymbol] * quotient) - cumulativeFrequencyOf[decodedSymbol] + remainder;
 
 		return { newState, decodedSymbol };
 	}
@@ -252,13 +256,13 @@ class BinaryRangeANSCoder {
 
 	// Looks up encoder transition in the table.
 	// Doesn't check if the table is empty or if arguments are out of range.
-	inline uint64_t LookupEncoderStateTransitionFor(uint64_t state, uint8_t symbol) {
+	inline uint32_t LookupEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
 		return encoderStateTransitionTable.at((state * 2) + symbol);
 	}
 
 	// Looks up decoder transition in the table.
 	// Doesn't check if the table is empty or if arguments are out of range.
-	inline StateAndSymbol LookupDecoderStateTransitionFor(uint64_t state) {
+	inline StateAndSymbol LookupDecoderStateTransitionFor(uint32_t state) {
 		return decoderStateTransitionTable.at(state);
 	}
 
@@ -277,7 +281,7 @@ class BinaryRangeANSCoder {
 		encoderStateTransitionTable.reserve(stateCount * 2);
 
 		// Append two consecutive table entries for each state, one for symbol 0 and other for symbol 1
-		for (int stateValue = 0; stateValue < stateCount; stateValue++) {
+		for (uint32_t stateValue = 0; stateValue < stateCount; stateValue++) {
 			auto followingStateFor0 = ComputeEncoderStateTransitionFor(stateValue, 0);
 			auto followingStateFor1 = ComputeEncoderStateTransitionFor(stateValue, 1);
 
@@ -300,7 +304,7 @@ class BinaryRangeANSCoder {
 		decoderStateTransitionTable.reserve(stateCount);
 
 		// Append a single table entry for each state
-		for (int stateValue = 0; stateValue < stateCount; stateValue++) {
+		for (uint32_t stateValue = 0; stateValue < stateCount; stateValue++) {
 			auto followingStateAndSymbol = ComputeDecoderStateTransitionFor(stateValue);
 
 			decoderStateTransitionTable.push_back(followingStateAndSymbol);
