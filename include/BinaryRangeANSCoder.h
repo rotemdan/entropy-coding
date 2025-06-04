@@ -36,10 +36,11 @@ class BinaryRangeANSCoder {
 		// Determines how "quantized" the symbol probabilities would be.
 		// Common values are 8, 12, 16, 20 and 24 bits.
 		//
-		// Maximum supported value is 24, since it implies the state would use the full 32-bit integer range.
+		// Maximum supported value is 24, since it implies the state would use the full 32-bit
+		// unsigned integer range.
 		//
 		// Larger range means more expensive table construction, and larger table memory size.
-		// Table size is 256 time larger than the range, or 8 bits more.
+		// Table size is 256 times larger than the range, or 8 bits more.
 		//
 		// If you intend to use table-base encoding / decoding methods,
 		// try to use a smaller range size, like 8 - 12 bits.
