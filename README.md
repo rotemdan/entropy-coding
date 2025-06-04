@@ -5,7 +5,7 @@ Readable C++ implementations of various entropy coding algorithms.
 Currently includes:
 
 * Binary Arithmetic Coding (uses integer arithmetic)
-* Binary Range Asymmetric Numeral Systems (rANS) coding
+* Binary Range Asymmetric Numeral Systems (rANS) coding, with support for optional table-based encoding and decoding
 
 ## Correctness
 
@@ -18,7 +18,7 @@ Please let me know if you encounter any issue.
 (measured on a single-core of 13th Gen Intel i3, compiled using MSVC 2022)
 
 * Binary Arithmetic Coding: about 70 - 200 Mbit/s for both encoder and decoder
-* Binary rANS: about 180 - 250 Mbit/s for encoder, 200 - 300 Mbit/s for decoder
+* Binary rANS: about 180 - 250 Mbit/s for encoder, 220 - 320 Mbit/s for decoder
 
 ## License
 
