@@ -29,7 +29,7 @@ class BinaryRangeANSCoder {
 		this->probabilityOf0 = 1.0 - probabilityOf1;
 		this->probabilityOf1 = probabilityOf1;
 
-		// Total size of frequency space, in bits. Common numbers are 8, 16, 20, 24 bits.
+		// Total size of frequency space, in bits. Common values are 8, 12, 16, 20, 24 bits.
 		this->totalFrequencySpaceBits = totalFrequencySpaceBits;
 
 		// Total frequency of all symbols
@@ -97,7 +97,7 @@ class BinaryRangeANSCoder {
 		uint64_t readPosition = 0;
 
 		for (uint64_t writePosition = 0; writePosition < outputBitLength; writePosition++) {
-			// If state reached the threshold, read a byte (aka "unflush") into the state.
+			// While state is smaller han the threshold, read a byte (aka "unflush") into the state.
 			//
 			// The threshold is the total frequency of all symbols.
 			while (state < totalFrequency && readPosition < encodedByteLength) {
@@ -118,15 +118,14 @@ class BinaryRangeANSCoder {
 
 	inline uint64_t ComputeEncoderStateTransitionFor(uint64_t state, uint8_t symbol) {
 		// Get symbol frequency and cumulative frequency
-		uint64_t symbolFrequency = frequencyOf[symbol];
-		uint64_t symbolCumulativeFrequency = cumulativeFrequencyOf[symbol];
+		uint64_t frequencyOfSymbol = frequencyOf[symbol];
 
 		// Compute quotient and remainder based on the state and frequency of the symbol
-		uint64_t quotient = state / symbolFrequency;
-		uint64_t remainder = state % symbolFrequency;
+		uint64_t quotient = state / frequencyOfSymbol;
+		uint64_t remainder = state % frequencyOfSymbol;
 
 		// Compute the new state
-		uint64_t newState = (totalFrequency * quotient) + symbolCumulativeFrequency + remainder;
+		uint64_t newState = (totalFrequency * quotient) + cumulativeFrequencyOf[symbol] + remainder;
 
 		return newState;
 	}
@@ -159,8 +158,8 @@ class BinaryRangeANSCoder {
 		return decoderStateTransitionTable.at(state);
 	}
 
-	// Generates the encoder's state transition table (optional)
-	void GenerateEncoderStateTransitionTable() {
+	// Builds the encoder's state transition table (optional)
+	void BuildEncoderStateTransitionTable() {
 		if (encoderStateTransitionTable.size() > 0) {
 			return;
 		}
@@ -178,8 +177,8 @@ class BinaryRangeANSCoder {
 		}
 	}
 
-	// Generates the decoder's state transition table (optional)
-	void GenerateDecoderStateTransitionTable() {
+	// Build the decoder's state transition table (optional)
+	void BuildDecoderStateTransitionTable() {
 		if (decoderStateTransitionTable.size() > 0) {
 			return;
 		}
