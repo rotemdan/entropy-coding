@@ -11,7 +11,8 @@ struct StateAndSymbol {
     uint8_t symbol;
 };
 
-// Binary Range Asymmetric Numeral Systems (rANS) encoder and decoder
+// Binary Range Asymmetric Numeral Systems (rANS) encoder and decoder,
+// with optional support for table-based processing (tANS).
 class BinaryRangeANSCoder {
    private:
 	double probabilityOf0;
