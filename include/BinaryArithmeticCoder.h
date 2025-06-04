@@ -22,8 +22,8 @@ inline constexpr uint64_t halfRange = highest / 2;
 inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
 
 void Encode(BitArray* inputBitArray,
-							   OutputBitStream* outputBitStream,
-							   double probabilityOf1) {
+			OutputBitStream* outputBitStream,
+			double probabilityOf1) {
 	// Input bit array length
 	auto inputBitLength = inputBitArray->BitLength();
 
