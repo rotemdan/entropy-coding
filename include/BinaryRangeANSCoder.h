@@ -130,7 +130,7 @@ class BinaryRangeANSCoder {
 		uint64_t readPosition = 0;
 
 		for (uint64_t writePosition = 0; writePosition < outputBitLength; writePosition++) {
-			// While state is smaller han the threshold, read a byte (aka "unflush") into the state.
+			// While state is smaller than the threshold, read a byte (aka "unflush") into the state.
 			//
 			// The threshold is the total frequency of all symbols.
 			while (state < totalFrequency && readPosition < encodedByteLength) {
