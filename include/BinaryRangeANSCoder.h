@@ -98,7 +98,16 @@ class BinaryRangeANSCoder {
 		// to correctly recreate the states seen during encoding, in reverse order.
 		std::reverse(outputBytes->begin(), outputBytes->end());
 
-		// Return the final state
+		// Return the final state.
+		//
+		// The final state is guaranteed to be in the range (0, totalFrequency * 256).
+		// So, for a state total frquency space of 8 bits, it will fit 16 bits.
+		// For space of 16 bits, it will fit 24 bits.
+		// For 24 bits, it will fit 32 bits, etc.
+		//
+		// For now, I don't serialize the state to bytes, because there are many
+		// ways to do so. For example, using plain fixed-length byte encodings,
+		// variable-length encodings, etc.
 		return state;
 	}
 
@@ -142,7 +151,7 @@ class BinaryRangeANSCoder {
 
 	// Encode bits using table. Requires encoder state transition table to be built first.
 	uint64_t EncodeUsingTable(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
-		if (encoderStateTransitionTable.size() == 0) {
+		if (!HasEncoderStateTransitionTable()) {
 			throw std::exception("Encoder state transition table has not been built.");
 		}
 
@@ -170,7 +179,7 @@ class BinaryRangeANSCoder {
 						  uint64_t state,
 						  BitArray* outputBitArray) {
 
-		if (decoderStateTransitionTable.size() == 0) {
+		if (!HasDecoderStateTransitionTable()) {
 			throw std::exception("Decoder state transition table has not built.");
 		}
 
@@ -246,7 +255,7 @@ class BinaryRangeANSCoder {
 	// Builds the encoder's state transition table
 	// (optional, needs to be explicitly called to enable table-based encoding)
 	void BuildEncoderStateTransitionTable() {
-		if (encoderStateTransitionTable.size() > 0) {
+		if (HasEncoderStateTransitionTable()) {
 			return;
 		}
 
@@ -271,7 +280,7 @@ class BinaryRangeANSCoder {
 	// Build the decoder's state transition table
 	// (optional, needs to be explicitly called to enable table-based decoding)
 	void BuildDecoderStateTransitionTable() {
-		if (decoderStateTransitionTable.size() > 0) {
+		if (HasDecoderStateTransitionTable()) {
 			return;
 		}
 
@@ -289,4 +298,7 @@ class BinaryRangeANSCoder {
 			decoderStateTransitionTable.push_back(followingStateAndSymbol);
 		}
 	}
+
+	bool HasEncoderStateTransitionTable() { return encoderStateTransitionTable.size() > 0; }
+	bool HasDecoderStateTransitionTable() { return decoderStateTransitionTable.size() > 0; }
 };
