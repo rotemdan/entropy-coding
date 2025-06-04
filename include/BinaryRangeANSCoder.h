@@ -204,7 +204,7 @@ class BinaryRangeANSCoder {
 	// State transition methods
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	// Given a state and symbol, compute the next encoder state
+	// Given a starting state and symbol, compute the next encoder state
 	inline uint64_t ComputeEncoderStateTransitionFor(uint64_t state, uint8_t symbol) {
 		// Get symbol frequency and cumulative frequency
 		uint64_t frequencyOfSymbol = frequencyOf[symbol];
@@ -219,7 +219,7 @@ class BinaryRangeANSCoder {
 		return newState;
 	}
 
-	// Given a state, compute the resulting decoder state and emitted symbol
+	// Given a starting state, compute the next decoder state and the emitted symbol
 	inline StateAndSymbol ComputeDecoderStateTransitionFor(uint64_t state) {
 		// Compute quotient and remainder based on the state and total frequency.
 		//
