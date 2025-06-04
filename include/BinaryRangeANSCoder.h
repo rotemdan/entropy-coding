@@ -22,6 +22,7 @@ class BinaryRangeANSCoder {
 
 	uint64_t frequencyOf[2];
 	uint64_t cumulativeFrequencyOf[2];
+	uint64_t encoderFlushThresholdOf[2];
 
 	std::vector<uint64_t> encoderStateTransitionTable;
 	std::vector<StateAndSymbol> decoderStateTransitionTable;
@@ -58,6 +59,10 @@ class BinaryRangeANSCoder {
 		// Lookup table for cumulative frequencies of symbols
 		cumulativeFrequencyOf[0] = 0;
 		cumulativeFrequencyOf[1] = frequencyOf0;
+
+		// Lookup table for encoder flush threshold of symbols
+		encoderFlushThresholdOf[0] = frequencyOf[0] * 256;
+		encoderFlushThresholdOf[1] = frequencyOf[1] * 256;
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +90,9 @@ class BinaryRangeANSCoder {
 			// The key is to ensure that after flushing, the state would be smaller than the total
 			// frequency. The decoder (reading in reverse) will then be able to recognize that in
 			// its threshold, and trigger its "unflush" operation.
-			while (state >= frequencyOf[symbol] * 256) {
+			auto flushThreshold = encoderFlushThresholdOf[symbol];
+
+			while (state >= flushThreshold) {
 				outputBytes->push_back(state & 255);
 				state = state >> 8;
 			}
@@ -160,7 +167,9 @@ class BinaryRangeANSCoder {
 		for (int64_t readPosition = inputBitArray->BitLength() - 1; readPosition >= 0; readPosition--) {
 			auto symbol = inputBitArray->ReadBitAt(readPosition);
 
-			while (state >= frequencyOf[symbol] * 256) {
+			auto flushThreshold = encoderFlushThresholdOf[symbol];
+
+			while (state >= flushThreshold) {
 				outputBytes->push_back(state & 255);
 				state = state >> 8;
 			}
@@ -201,7 +210,7 @@ class BinaryRangeANSCoder {
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
-	// State transition methods
+	// State transition computation methods
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Given a starting state and symbol, compute the next encoder state
