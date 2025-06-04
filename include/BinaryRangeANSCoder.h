@@ -260,8 +260,7 @@ class BinaryRangeANSCoder {
 		}
 
 		// The size of the encoder table is the total frequency times 256.
-		// A state cannot be higher than that since any higher value will trigger flushing
-		// before a symbol is encoded.
+		// A state value cannot be equal to or greater than this value.
 		auto stateCount = totalFrequency * 256;
 
 		// Reserve memory
@@ -285,8 +284,7 @@ class BinaryRangeANSCoder {
 		}
 
 		// The size of the decoder table is the total frequency times 256.
-		// A state cannot be higher than this since the encoder shouldn't cause higher values
-		// to occur.
+		// A state value cannot be equal to or greater than this value.
 		auto stateCount = totalFrequency * 256;
 
 		decoderStateTransitionTable.reserve(stateCount);
