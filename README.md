@@ -4,8 +4,8 @@ Readable C++ implementations of various entropy coding algorithms.
 
 Currently includes:
 
-* Binary Arithmetic Coding (uses integer arithmetic)
-* Binary Range Asymmetric Numeral Systems (rANS) coding, with support for optional table-based encoding and decoding
+* [Binary Arithmetic Coding](https://github.com/rotemdan/entropy-coding/tree/main/include/BinaryArithmeticCoder.h) (uses integer arithmetic)
+* [Binary Range Asymmetric Numeral Systems (rANS) coding](https://github.com/rotemdan/entropy-coding/tree/main/include/BinaryRangeANSCoder.h), with support for optional table-based encoding and decoding
 
 ## Correctness
 
