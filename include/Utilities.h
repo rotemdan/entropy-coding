@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 namespace EntropyCodingUtilities {
 
 template <typename T>
@@ -15,4 +17,4 @@ T clip(T num, T min, T max) {
 	return num;
 }
 
-}
+}  // namespace EntropyCodingUtilities

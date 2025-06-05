@@ -3,6 +3,9 @@
 #include "BitArray.h"
 #include "OutputBitStream.h"
 #include "Utilities.h"
+#include "FastUint32Division.h"
+
+using namespace EntropyCodingUtilities;
 
 struct StateAndSymbol {
     uint32_t state;
@@ -19,6 +22,7 @@ class BinaryRangeANSCoder {
 	uint32_t frequencyOf[2];
 	uint32_t cumulativeFrequencyOf[2];
 	uint32_t encoderFlushThresholdOf[2];
+	FastUint32Division fastDivisionForFrequencyOf[2];
 
 	std::vector<uint32_t> encoderStateTransitionTable;
 	std::vector<StateAndSymbol> decoderStateTransitionTable;
@@ -57,7 +61,7 @@ class BinaryRangeANSCoder {
 		auto frequencyOf0 = uint32_t(round(probabilityOf0 * totalFrequency));
 
 		// Ensure frequencies are at least 1
-		frequencyOf0 = EntropyCodingUtilities::clip(frequencyOf0, 1u, totalFrequency - 1);
+		frequencyOf0 = clip(frequencyOf0, 1u, totalFrequency - 1);
 
 		// Lookup table for frequencies of symbols
 		frequencyOf[0] = frequencyOf0;
@@ -70,6 +74,10 @@ class BinaryRangeANSCoder {
 		// Lookup table for encoder flush threshold of symbols
 		encoderFlushThresholdOf[0] = frequencyOf[0] * 256;
 		encoderFlushThresholdOf[1] = frequencyOf[1] * 256;
+
+		// Lookup table for fast division object for the symbol frequencies
+		fastDivisionForFrequencyOf[0] = FastUint32Division(frequencyOf[0]);
+		fastDivisionForFrequencyOf[1] = FastUint32Division(frequencyOf[1]);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -226,12 +234,19 @@ class BinaryRangeANSCoder {
 
 	// Given a starting state and symbol, compute the next encoder state
 	inline uint32_t ComputeEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
-		// Get symbol frequency and cumulative frequency
-		uint32_t frequencyOfSymbol = frequencyOf[symbol];
-
 		// Compute quotient and remainder based on the state and frequency of the symbol
-		uint32_t quotient = state / frequencyOfSymbol;
-		uint32_t remainder = state % frequencyOfSymbol;
+		//
+		// This division is optimized to a multiplication and shift using the
+		// FastUint32Division helper class.
+
+		// Slow version:
+		//uint32_t quotient = state / frequencyOf[symbol];
+		//uint32_t remainder = state % frequencyOf[symbol];
+
+		// Fast version:
+		auto divisionResult = fastDivisionForFrequencyOf[symbol].DivideAndGetRemainder(state);
+		uint32_t quotient = divisionResult.quotient;
+		uint32_t remainder = divisionResult.remainder;
 
 		// Compute the new state
 		uint32_t newState = (totalFrequency * quotient) + cumulativeFrequencyOf[symbol] + remainder;
@@ -248,7 +263,7 @@ class BinaryRangeANSCoder {
 		uint32_t remainder = state & (totalFrequency - 1);
 
 		// Find the decoded symbol based on the remainder
-		uint8_t decodedSymbol = remainder < cumulativeFrequencyOf[1] ? 0 : 1;
+		uint8_t decodedSymbol = remainder >= cumulativeFrequencyOf[1];
 
 		// Compute the new state
 		uint32_t newState = (frequencyOf[decodedSymbol] * quotient) - cumulativeFrequencyOf[decodedSymbol] + remainder;
