@@ -69,6 +69,10 @@ class FastUint32Division {
 	//
 	// Can be optimized to use fast bitwise operations, instead of a loop.
 	static uint8_t GetExponentOfClosestPowerOfTwoGreaterOrEqualTo(uint64_t value) {
+		if (value <= 1) {
+			return 0;
+		}
+
 		uint8_t exponent = 0;
 
 		uint64_t val = value - 1;
