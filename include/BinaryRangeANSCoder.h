@@ -168,7 +168,7 @@ class BinaryRangeANSCoder {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Table-based encoding and decoding methods.
 	//
-	// Separated to ensure methods get optimized correctly.
+	// Separated to ensure methods get optimized correctly by the compiler.
 	//
 	// Although the code duplication is not very desirable, attempts to merge
 	// table-based and non table-based methods seemed to have significantly
