@@ -6,16 +6,16 @@
 // Binary arithmetic coder, based mostly on integer arithmetic.
 namespace BinaryArithmeticCoder {
 
-// Range bit count should ensure that when the interval range (high - low) is
+// Range bit width should ensure that when the interval range (high - low) is
 // converted to float64, during computation of the boundary, the resulting floating point number
 // doesn't cause a loss in accuracy.
 //
 // A value of 53 should be safe since the maximum safe integer for float64 is 2^53 - 1
-inline constexpr int64_t rangeBitCount = 53;
+inline constexpr int64_t totalRangeBitWidth = 53;
 
 // Range constants. Map the [0.0, 1.0) fractional range to integers.
 inline constexpr uint64_t lowest = 0;
-inline constexpr uint64_t highest = (1ULL << rangeBitCount);
+inline constexpr uint64_t highest = (1ULL << totalRangeBitWidth);
 
 inline constexpr uint64_t quarterRange = highest / 4;
 inline constexpr uint64_t halfRange = highest / 2;
@@ -165,7 +165,7 @@ void Decode(BitArray* inputBitArray,
 	// Initialize value
 	{
 		// Determine initial bit count
-		auto initialBitCount = inputBitLength >= rangeBitCount ? rangeBitCount : inputBitLength;
+		auto initialBitCount = inputBitLength >= totalRangeBitWidth ? totalRangeBitWidth : inputBitLength;
 
 		// Fill value with initial bits
 		while (readPosition < initialBitCount) {
@@ -174,7 +174,7 @@ void Decode(BitArray* inputBitArray,
 		}
 
 		// Pad with zeros if encoded bit count is smaller than precision bit count
-		value = value << (rangeBitCount - initialBitCount);
+		value = value << (totalRangeBitWidth - initialBitCount);
 	}
 
 	// Decode the specified number of bits
