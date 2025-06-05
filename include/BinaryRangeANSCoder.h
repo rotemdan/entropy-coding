@@ -299,7 +299,7 @@ class BinaryRangeANSCoder {
 
 		// The size of the encoder table is the total frequency times 256.
 		// A state value cannot be greater than or equal to this value.
-		auto stateCount = totalFrequency * 256;
+		auto stateCount = uint64_t(totalFrequency) * 256;
 
 		// Reserve memory
 		encoderStateTransitionTable.reserve(stateCount * 2);
@@ -323,8 +323,9 @@ class BinaryRangeANSCoder {
 
 		// The size of the decoder table is the total frequency times 256.
 		// A state value cannot be equal to or greater than this value.
-		auto stateCount = totalFrequency * 256;
+		auto stateCount = uint64_t(totalFrequency) * 256;
 
+		// Reserve memory
 		decoderStateTransitionTable.reserve(stateCount);
 
 		// Append a single table entry for each state
@@ -335,6 +336,15 @@ class BinaryRangeANSCoder {
 		}
 	}
 
+	// Has an encoder state transition table been built?
 	bool HasEncoderStateTransitionTable() { return encoderStateTransitionTable.size() > 0; }
+
+	// Has a decoder state transition table been built?
 	bool HasDecoderStateTransitionTable() { return decoderStateTransitionTable.size() > 0; }
+
+	// Computes the total memory size, in bytes, required by an encoder state transition table
+	uint64_t GetEncoderStateTransitionTableMemorySize() { return uint64_t(totalFrequency) * 256 * sizeof(uint32_t) * 2; }
+
+	// Computes the total memory size, in bytes, required by a decoder state transition table
+	uint64_t GetDecoderStateTransitionTableMemorySize() { return uint64_t(totalFrequency) * 256 * sizeof(StateAndSymbol); }
 };
