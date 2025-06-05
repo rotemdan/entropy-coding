@@ -235,7 +235,7 @@ class BinaryRangeANSCoder {
 	// Given a starting state and symbol, compute the next encoder state
 	inline uint32_t ComputeEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
 		// Compute quotient and remainder based on the state and frequency of the symbol
-
+		//
 		// Slow version:
 		//uint32_t quotient = state / frequencyOf[symbol];
 		//uint32_t remainder = state % frequencyOf[symbol];
@@ -255,7 +255,7 @@ class BinaryRangeANSCoder {
 	// Given a starting state, compute the next decoder state and the emitted symbol
 	inline StateAndSymbol ComputeDecoderStateTransitionFor(uint32_t state) {
 		// Compute quotient and remainder based on the state and total frequency.
-
+		//
 		// Slow version:
 		//uint32_t quotient = state / totalFrequency;
 		//uint32_t remainder = state % totalFrequency;
