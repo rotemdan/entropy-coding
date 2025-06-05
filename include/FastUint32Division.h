@@ -15,6 +15,7 @@ struct QuotientAndRemainderUint32 {
 class FastUint32Division {
    private:
     uint32_t divisor;
+	
 	uint64_t multiplier;
 	uint8_t shiftAmount;
 

@@ -12,7 +12,7 @@ struct StateAndSymbol {
     uint8_t symbol;
 };
 
-// Binary Range Asymmetric Numeral Systems (rANS) encoder and decoder,
+// Range Asymmetric Numeral Systems (rANS) encoder and decoder for a binary alphabet (0 and 1),
 // with optional support for table-based processing (tANS).
 class BinaryRangeANSCoder {
    private:
@@ -281,13 +281,13 @@ class BinaryRangeANSCoder {
 	// Looks up encoder transition in the table.
 	// Doesn't check if the table is empty or if arguments are out of range.
 	inline uint32_t LookupEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
-		return encoderStateTransitionTable.at((state * 2) + symbol);
+		return encoderStateTransitionTable[(state * 2) + symbol];
 	}
 
 	// Looks up decoder transition in the table.
 	// Doesn't check if the table is empty or if arguments are out of range.
 	inline StateAndSymbol LookupDecoderStateTransitionFor(uint32_t state) {
-		return decoderStateTransitionTable.at(state);
+		return decoderStateTransitionTable[state];
 	}
 
 	// Builds the encoder's state transition table
