@@ -235,15 +235,13 @@ class BinaryRangeANSCoder {
 	// Given a starting state and symbol, compute the next encoder state
 	inline uint32_t ComputeEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
 		// Compute quotient and remainder based on the state and frequency of the symbol
-		//
-		// This division is optimized to a multiplication and shift using the
-		// FastUint32Division helper class.
 
 		// Slow version:
 		//uint32_t quotient = state / frequencyOf[symbol];
 		//uint32_t remainder = state % frequencyOf[symbol];
-
-		// Fast version:
+		//
+		// Fast version,
+		// Uses fast division based on a single 64-bit multiplication and a single right shift:
 		auto divisionResult = fastDivisionForFrequencyOf[symbol].DivideAndGetRemainder(state);
 		uint32_t quotient = divisionResult.quotient;
 		uint32_t remainder = divisionResult.remainder;
@@ -257,8 +255,13 @@ class BinaryRangeANSCoder {
 	// Given a starting state, compute the next decoder state and the emitted symbol
 	inline StateAndSymbol ComputeDecoderStateTransitionFor(uint32_t state) {
 		// Compute quotient and remainder based on the state and total frequency.
+
+		// Slow version:
+		//uint32_t quotient = state / totalFrequency;
+		//uint32_t remainder = state % totalFrequency;
 		//
-		// Optimized for bitwise operations since totalFrequency is guaranteed to be a power of two.
+		// Fast version, optimized with bitwise operations since totalFrequency
+		// is guaranteed to be a power of two:
 		uint32_t quotient = state >> totalRangeBitWidth;
 		uint32_t remainder = state & (totalFrequency - 1);
 

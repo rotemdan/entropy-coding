@@ -7,6 +7,11 @@ struct QuotientAndRemainderUint32 {
 	uint32_t remainder;
 };
 
+// Uses precomputed "magic numbers" to efficiently compute division
+// of unsigned 32-bit integers, using only a single 64-bit multiplication and a single right shift.
+//
+// Based on ideas from the book:
+// "Hacker's Delight" (Chapter 10), by Henry S. Warren, Jr. (2002)
 class FastUint32Division {
    private:
     uint32_t divisor;
@@ -59,6 +64,9 @@ class FastUint32Division {
 		return { quotient, remainder };
 	}
 
+	// Finds exponent of closest power of two greater or equal to the given value.
+	//
+	// Can be optimized to use fast bitwise operations, instead of a loop.
 	static uint8_t GetExponentOfClosestPowerOfTwoGreaterOrEqualTo(uint64_t value) {
 		uint8_t exponent = 0;
 
