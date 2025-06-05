@@ -13,7 +13,7 @@ struct StateAndSymbol {
 // with optional support for table-based processing (tANS).
 class BinaryRangeANSCoder {
    private:
-	uint32_t totalRangeSizeInBits;
+	uint32_t totalRangeBitWidth;
 	uint32_t totalFrequency;
 
 	uint32_t frequencyOf[2];
@@ -24,9 +24,13 @@ class BinaryRangeANSCoder {
 	std::vector<StateAndSymbol> decoderStateTransitionTable;
 
    public:
-	BinaryRangeANSCoder(double probabilityOf1, uint8_t totalRangeSizeInBits) {
-		if (totalRangeSizeInBits < 1 || totalRangeSizeInBits > 24) {
-			throw std::exception("Total range bit size must be between 1 and 24 (inclusive).");
+	BinaryRangeANSCoder(double probabilityOf1, uint8_t totalRangeBitWidth) {
+		if (probabilityOf1 < 0.0 || probabilityOf1 > 1.0) {
+			throw std::exception("Probability of 1 must be between 0.0 and 1.0.");
+		}
+
+		if (totalRangeBitWidth < 1 || totalRangeBitWidth > 24) {
+			throw std::exception("Total range bit width must be between 1 and 24 (inclusive).");
 		}
 
 		// Probability of symbol 0
@@ -44,10 +48,10 @@ class BinaryRangeANSCoder {
 		//
 		// If you intend to use table-base encoding / decoding methods,
 		// try to use a smaller range size, like 8 - 12 bits.
-		this->totalRangeSizeInBits = totalRangeSizeInBits;
+		this->totalRangeBitWidth = totalRangeBitWidth;
 
 		// Total frequency of all symbols
-		this->totalFrequency = 1u << totalRangeSizeInBits;
+		this->totalFrequency = 1u << totalRangeBitWidth;
 
 		// Compute frequency of symbol 0
 		auto frequencyOf0 = uint32_t(round(probabilityOf0 * totalFrequency));
@@ -196,7 +200,7 @@ class BinaryRangeANSCoder {
 						  BitArray* outputBitArray) {
 
 		if (!HasDecoderStateTransitionTable()) {
-			throw std::exception("Decoder state transition table has not built.");
+			throw std::exception("Decoder state transition table has not been built.");
 		}
 
 		int64_t outputBitLength = outputBitArray->BitLength();
@@ -240,7 +244,7 @@ class BinaryRangeANSCoder {
 		// Compute quotient and remainder based on the state and total frequency.
 		//
 		// Optimized for bitwise operations since totalFrequency is guaranteed to be a power of two.
-		uint32_t quotient = state >> totalRangeSizeInBits;
+		uint32_t quotient = state >> totalRangeBitWidth;
 		uint32_t remainder = state & (totalFrequency - 1);
 
 		// Find the decoded symbol based on the remainder
