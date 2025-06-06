@@ -46,11 +46,9 @@ class FastUint32Division {
 			multiplier = 1;
 			shiftAmount = exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor;
 		} else {
-			// Otherwise, compute a "magic" multiplier and shift amount
-			uint64_t numerator = 1ULL << (32 + exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor - 1);
-
-			multiplier = (numerator / divisor) + 1;
+			// Compute a "magic" multiplier and shift amount
 			shiftAmount = 32 + (exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor - 1);
+			multiplier = ((1ULL << shiftAmount) / divisor) + 1;
 		}
 	}
 
