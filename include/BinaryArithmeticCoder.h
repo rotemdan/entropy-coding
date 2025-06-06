@@ -22,7 +22,11 @@ inline constexpr uint64_t halfRange = highest / 2;
 inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
 
 static uint64_t ComputeFixedPointMultiplierFor(double fractionBetween0And1) {
+	// Compute the multiplier
 	uint64_t multiplier = uint64_t(fractionBetween0And1 * highestAsDouble);
+
+	// Ensure multiplier cannot equal highest value to prevent potential unsigned overflow
+	// after multiplication.
 	multiplier = EntropyCodingUtilities::clip(multiplier, 0ULL, highest - 1);
 
 	return multiplier;
@@ -39,7 +43,7 @@ void Encode(BitArray& inputBitArray,
 	// Probability of 0 symbol
 	double probabilityOf0 = 1.0 - probabilityOf1;
 
-	// Probability of 0 symbol fixed-point multiplier
+	// Fixed-point multiplier for the probability of 0
 	uint64_t probabilityOf0FixedPointMultiplier = ComputeFixedPointMultiplierFor(probabilityOf0);
 
 	// Current interval
@@ -174,7 +178,7 @@ void Decode(BitArray& inputBitArray,
 	// Probability of 0 symbol
 	double probabilityOf0 = 1.0 - probabilityOf1;
 
-	// Probability of 0 symbol fixed-point multiplier
+	// Fixed-point multiplier for the probability of 0
 	uint64_t probabilityOf0FixedPointMultiplier = ComputeFixedPointMultiplierFor(probabilityOf0);
 
 	// Current interval
