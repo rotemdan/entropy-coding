@@ -2,6 +2,10 @@
 
 #include <cstdint>
 
+#if __cplusplus >= 202002L
+#include <bit>
+#endif
+
 struct QuotientAndRemainderUint32 {
 	uint32_t quotient;
 	uint32_t remainder;
@@ -64,13 +68,16 @@ class FastUint32Division {
 	}
 
 	// Finds exponent of closest power of two greater or equal to the given value.
-	//
-	// Can be optimized to use fast bitwise operations, instead of a loop.
 	static uint8_t GetExponentOfClosestPowerOfTwoGreaterOrEqualTo(uint64_t value) {
 		if (value <= 1) {
 			return 0;
 		}
 
+#if __cplusplus >= 202002L
+		// If compiled with C++20 or higher supported, use std::bit_width
+		return std::bit_width(value - 1);
+#else
+		// Otherwise fall back to slower version
 		uint8_t exponent = 0;
 
 		uint64_t val = value - 1;
@@ -82,5 +89,6 @@ class FastUint32Division {
 		}
 
 		return exponent;
+#endif
 	}
 };
