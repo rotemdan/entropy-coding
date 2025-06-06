@@ -136,7 +136,8 @@ class BinaryRangeANSCoder {
 		return state;
 	}
 
-	// Decode bits given encoded bytes and state
+	// Decode bits given encoded bytes and state.
+	// outputBitArray should be pre-sized to the expected decoded message length.
 	void Decode(uint8_t* encodedBytes,
 				int64_t encodedByteLength,
 				uint32_t state,

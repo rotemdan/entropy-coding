@@ -21,6 +21,7 @@ inline constexpr uint64_t quarterRange = highest / 4;
 inline constexpr uint64_t halfRange = highest / 2;
 inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
 
+// Encode message bits
 void Encode(BitArray* inputBitArray,
 			OutputBitStream* outputBitStream,
 			double probabilityOf1) {
@@ -136,12 +137,17 @@ void Encode(BitArray* inputBitArray,
 	}
 }
 
+// Decode message bits given encoded bits.
+// outputBitArray should be pre-sized to the expected decoded message length.
 void Decode(BitArray* inputBitArray,
 			BitArray* outputBitArray,
 			double probabilityOf1) {
 
 	// Input bit array length
 	auto inputBitLength = inputBitArray->BitLength();
+
+	// Output bit array length
+	auto outputBitLength = outputBitArray->BitLength();
 
 	// Probability of 0 bit
 	double probabilityOf0 = 1.0 - probabilityOf1;
@@ -156,8 +162,6 @@ void Decode(BitArray* inputBitArray,
 	// Read and write positions
 	int64_t readPosition = 0;
 	int64_t writePosition = 0;
-
-	auto outputBitLength = outputBitArray->BitLength();
 
 	// Outputs a bit
 	auto outputBit = [&](uint8_t bit) { outputBitArray->WriteBit(bit, writePosition++); };
