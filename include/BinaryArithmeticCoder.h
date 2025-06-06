@@ -22,11 +22,12 @@ inline constexpr uint64_t halfRange = highest / 2;
 inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
 
 // Encode message bits
-void Encode(BitArray* inputBitArray,
-			OutputBitStream* outputBitStream,
+void Encode(BitArray& inputBitArray,
+			OutputBitStream& outputBitStream,
 			double probabilityOf1) {
+				
 	// Input bit array length
-	auto inputBitLength = inputBitArray->BitLength();
+	auto inputBitLength = inputBitArray.BitLength();
 
 	// Probability of 0 bit
 	double probabilityOf0 = 1.0 - probabilityOf1;
@@ -42,7 +43,7 @@ void Encode(BitArray* inputBitArray,
 	int64_t readPosition = 0;
 
 	// Outputs a bit
-	auto outputBit = [&](uint8_t bit) { outputBitStream->WriteBit(bit); };
+	auto outputBit = [&](uint8_t bit) { outputBitStream.WriteBit(bit); };
 
 	// Output all pending bits, with the given bit value
 	auto outputPendingBitsAs = [&](uint8_t bit) {
@@ -58,7 +59,7 @@ void Encode(BitArray* inputBitArray,
 		// Narrow current interval
 		{
 			// Read new bit from input
-			uint8_t inputBit = inputBitArray->ReadBitAt(readPosition);
+			uint8_t inputBit = inputBitArray.ReadBitAt(readPosition);
 
 			// Calculate the boundary between symbols 0 and 1 within the current interval
 			// This is the point where the sub-interval for 0 ends and 1 begins
@@ -139,15 +140,15 @@ void Encode(BitArray* inputBitArray,
 
 // Decode message bits given encoded bits.
 // outputBitArray should be pre-sized to the expected decoded message length.
-void Decode(BitArray* inputBitArray,
-			BitArray* outputBitArray,
+void Decode(BitArray& inputBitArray,
+			BitArray& outputBitArray,
 			double probabilityOf1) {
 
 	// Input bit array length
-	auto inputBitLength = inputBitArray->BitLength();
+	auto inputBitLength = inputBitArray.BitLength();
 
 	// Output bit array length
-	auto outputBitLength = outputBitArray->BitLength();
+	auto outputBitLength = outputBitArray.BitLength();
 
 	// Probability of 0 bit
 	double probabilityOf0 = 1.0 - probabilityOf1;
@@ -164,7 +165,7 @@ void Decode(BitArray* inputBitArray,
 	int64_t writePosition = 0;
 
 	// Outputs a bit
-	auto outputBit = [&](uint8_t bit) { outputBitArray->WriteBit(bit, writePosition++); };
+	auto outputBit = [&](uint8_t bit) { outputBitArray.WriteBit(bit, writePosition++); };
 
 	// Initialize value
 	{
@@ -174,7 +175,7 @@ void Decode(BitArray* inputBitArray,
 		// Fill value with initial bits
 		while (readPosition < initialBitCount) {
 			value *= 2;
-			value |= inputBitArray->ReadBitAt(readPosition++);
+			value |= inputBitArray.ReadBitAt(readPosition++);
 		}
 
 		// Pad with zeros if encoded bit count is smaller than precision bit count
@@ -236,7 +237,7 @@ void Decode(BitArray* inputBitArray,
 			// Value's least significant bit must be 0, since value was multiplied by two
 			// in all branches of the conditional, effectively being shifted left by one bit
 			if (readPosition < inputBitLength) {
-				value |= inputBitArray->ReadBitAt(readPosition++);
+				value |= inputBitArray.ReadBitAt(readPosition++);
 			}
 		}
 	}

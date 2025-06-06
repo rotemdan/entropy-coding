@@ -85,13 +85,13 @@ class BinaryRangeANSCoder {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Encode message bits
-	uint32_t Encode(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
+	uint32_t Encode(BitArray& inputBitArray, std::vector<uint8_t>& outputBytes) {
 		uint32_t state = totalFrequency;
 
 		// Iterate message bits in reverse order
-		for (int64_t readPosition = inputBitArray->BitLength() - 1; readPosition >= 0; readPosition--) {
+		for (int64_t readPosition = inputBitArray.BitLength() - 1; readPosition >= 0; readPosition--) {
 			// Take message bit
-			auto symbol = inputBitArray->ReadBitAt(readPosition);
+			auto symbol = inputBitArray.ReadBitAt(readPosition);
 
 			// While the threshold is reached, flush the lowest byte of the state.
 			//
@@ -108,7 +108,7 @@ class BinaryRangeANSCoder {
 			auto flushThreshold = encoderFlushThresholdOf[symbol];
 
 			while (state >= flushThreshold) {
-				outputBytes->push_back(state & 255);
+				outputBytes.push_back(state & 255);
 				state >>= 8;
 			}
 
@@ -118,7 +118,7 @@ class BinaryRangeANSCoder {
 
 		// Reverse flushed bytes so the decoder can read them in forward order,
 		// to correctly recreate the states seen during encoding, in reverse order.
-		std::reverse(outputBytes->begin(), outputBytes->end());
+		std::reverse(outputBytes.begin(), outputBytes.end());
 
 		// Return the final state.
 		//
@@ -141,9 +141,9 @@ class BinaryRangeANSCoder {
 	void Decode(uint8_t* encodedBytes,
 				int64_t encodedByteLength,
 				uint32_t state,
-				BitArray* outputBitArray) {
+				BitArray& outputBitArray) {
 
-		auto outputBitLength = outputBitArray->BitLength();
+		auto outputBitLength = outputBitArray.BitLength();
 
 		int64_t readPosition = 0;
 
@@ -162,7 +162,7 @@ class BinaryRangeANSCoder {
 			state = stateTransitionResult.state;
 
 			// Output the decoded symbol
-			outputBitArray->WriteBit(stateTransitionResult.symbol, writePosition);
+			outputBitArray.WriteBit(stateTransitionResult.symbol, writePosition);
 		}
 	}
 
@@ -177,27 +177,27 @@ class BinaryRangeANSCoder {
 	/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Encode bits using table. Requires encoder state transition table to be built first.
-	uint32_t EncodeUsingTable(BitArray* inputBitArray, std::vector<uint8_t>* outputBytes) {
+	uint32_t EncodeUsingTable(BitArray& inputBitArray, std::vector<uint8_t>& outputBytes) {
 		if (!HasEncoderStateTransitionTable()) {
 			throw std::exception("Encoder state transition table has not been built.");
 		}
 
 		uint32_t state = totalFrequency;
 
-		for (int64_t readPosition = inputBitArray->BitLength() - 1; readPosition >= 0; readPosition--) {
-			auto symbol = inputBitArray->ReadBitAt(readPosition);
+		for (int64_t readPosition = inputBitArray.BitLength() - 1; readPosition >= 0; readPosition--) {
+			auto symbol = inputBitArray.ReadBitAt(readPosition);
 
 			auto flushThreshold = encoderFlushThresholdOf[symbol];
 
 			while (state >= flushThreshold) {
-				outputBytes->push_back(state & 255);
+				outputBytes.push_back(state & 255);
 				state >>= 8;
 			}
 
 			state = LookupEncoderStateTransitionFor(state, symbol);
 		}
 
-		std::reverse(outputBytes->begin(), outputBytes->end());
+		std::reverse(outputBytes.begin(), outputBytes.end());
 
 		return state;
 	}
@@ -206,13 +206,13 @@ class BinaryRangeANSCoder {
 	void DecodeUsingTable(uint8_t* encodedBytes,
 						  int64_t encodedByteLength,
 						  uint32_t state,
-						  BitArray* outputBitArray) {
+						  BitArray& outputBitArray) {
 
 		if (!HasDecoderStateTransitionTable()) {
 			throw std::exception("Decoder state transition table has not been built.");
 		}
 
-		int64_t outputBitLength = outputBitArray->BitLength();
+		int64_t outputBitLength = outputBitArray.BitLength();
 
 		int64_t readPosition = 0;
 
@@ -225,7 +225,7 @@ class BinaryRangeANSCoder {
 
 			state = stateTransitionResult.state;
 
-			outputBitArray->WriteBit(stateTransitionResult.symbol, writePosition);
+			outputBitArray.WriteBit(stateTransitionResult.symbol, writePosition);
 		}
 	}
 
