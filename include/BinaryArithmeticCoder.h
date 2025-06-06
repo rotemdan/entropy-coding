@@ -171,7 +171,7 @@ void Decode(BitArray& inputBitArray,
 	// Output bit array length
 	auto outputBitLength = outputBitArray.BitLength();
 
-	// Probability of 0 bit
+	// Probability of 0 symbol
 	double probabilityOf0 = 1.0 - probabilityOf1;
 
 	// Probability of 0 symbol fixed-point multiplier
