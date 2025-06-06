@@ -2,24 +2,29 @@
 
 #include "BitArray.h"
 #include "OutputBitStream.h"
+#include "Utilities.h"
 
-// Binary arithmetic coder, based mostly on integer arithmetic.
+// Binary arithmetic coder. Uses fixed-point integer arithmetic.
 namespace BinaryArithmeticCoder {
 
-// Range bit width should ensure that when the interval range (high - low) is
-// converted to float64, during computation of the boundary, the resulting floating point number
-// doesn't cause a loss in accuracy.
-//
-// A value of 53 should be safe since the maximum safe integer for float64 is 2^53 - 1
-inline constexpr int64_t totalRangeBitWidth = 53;
+// Total range bit width. Cannot be higher than 32 bits.
+inline constexpr uint8_t totalRangeBitWidth = 32;
 
 // Range constants. Map the [0.0, 1.0) fractional range to integers.
 inline constexpr uint64_t lowest = 0;
-inline constexpr uint64_t highest = (1ULL << totalRangeBitWidth);
+inline constexpr uint64_t highest = 1ULL << totalRangeBitWidth;
+inline constexpr double highestAsDouble = double(highest);
 
 inline constexpr uint64_t quarterRange = highest / 4;
 inline constexpr uint64_t halfRange = highest / 2;
 inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
+
+static uint64_t ComputeFixedPointMultiplierFor(double fractionBetween0And1) {
+	uint64_t multiplier = uint64_t(fractionBetween0And1 * highestAsDouble);
+	multiplier = EntropyCodingUtilities::clip(multiplier, 0ULL, highest - 1);
+
+	return multiplier;
+}
 
 // Encode message bits
 void Encode(BitArray& inputBitArray,
@@ -29,8 +34,11 @@ void Encode(BitArray& inputBitArray,
 	// Input bit array length
 	auto inputBitLength = inputBitArray.BitLength();
 
-	// Probability of 0 bit
+	// Probability of 0 symbol
 	double probabilityOf0 = 1.0 - probabilityOf1;
+
+	// Probability of 0 symbol fixed-point multiplier
+	uint64_t probabilityOf0FixedPointMultiplier = ComputeFixedPointMultiplierFor(probabilityOf0);
 
 	// Current interval
 	uint64_t low = lowest;
@@ -63,7 +71,18 @@ void Encode(BitArray& inputBitArray,
 
 			// Calculate the boundary between symbols 0 and 1 within the current interval
 			// This is the point where the sub-interval for 0 ends and 1 begins
-			uint64_t boundary = low + uint64_t(double(high - low) * probabilityOf0);
+			//
+			// The boundary is computed via fast fixed-point arithmetic.
+			//
+			// To compute the sub-interval length, the current interval length is multiplied by
+			// a precomputed integer multiplier equal to `highest * probabilityOf0`
+			// and then divided by `highest` via a right shift by `totalRangeBitWidth`,
+			// since `highest = 1 << totalRangeBitWidth`.
+			//
+			// The boundary is then computed as `low + lowerSubintervalLength`
+			uint64_t intervalLength = high - low;
+			uint64_t lowerSubintervalLength = (intervalLength * probabilityOf0FixedPointMultiplier) >> totalRangeBitWidth;
+			uint64_t boundary = low + lowerSubintervalLength;
 
 			if (inputBit == 0) {
 				high = boundary;  // New interval is [low, boundary)
@@ -153,6 +172,9 @@ void Decode(BitArray& inputBitArray,
 	// Probability of 0 bit
 	double probabilityOf0 = 1.0 - probabilityOf1;
 
+	// Probability of 0 symbol fixed-point multiplier
+	uint64_t probabilityOf0FixedPointMultiplier = ComputeFixedPointMultiplierFor(probabilityOf0);
+
 	// Current interval
 	uint64_t low = lowest;
 	uint64_t high = highest;
@@ -188,7 +210,9 @@ void Decode(BitArray& inputBitArray,
 		{
 			// Calculate the boundary between symbols 0 and 1 within the current interval
 			// This is the point where the sub-interval for 0 ends and 1 begins
-			uint64_t boundary = low + uint64_t(double(high - low) * probabilityOf0);
+			uint64_t intervalLength = high - low;
+			uint64_t lowerSubintervalLength = (intervalLength * probabilityOf0FixedPointMultiplier) >> totalRangeBitWidth;
+			uint64_t boundary = low + lowerSubintervalLength;
 
 			// Determine the symbol based on where 'value' falls
 			if (value < boundary) {
