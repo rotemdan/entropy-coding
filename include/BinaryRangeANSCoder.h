@@ -51,7 +51,7 @@ class BinaryRangeANSCoder {
 		// Table size is 256 times larger than the range, or 8 bits more.
 		//
 		// If you intend to use table-base encoding / decoding methods,
-		// try to use a smaller range size, like 8 - 12 bits.
+		// try to use a smaller range size, like 6 - 12 bits.
 		this->totalRangeBitWidth = totalRangeBitWidth;
 
 		// Total frequency of all symbols
@@ -95,7 +95,7 @@ class BinaryRangeANSCoder {
 
 			// While the threshold is reached, flush the lowest byte of the state.
 			//
-			// The threshold is based on the symbol's frequency, times 256.
+			// The threshold is the symbol's frequency, times 256.
 			//
 			// The goal here is to ensure that the decoder is able to correctly recreate
 			// the same sequence of states, in reverse order. To achieve that, it needs to reliably
