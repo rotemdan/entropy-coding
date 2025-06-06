@@ -12,7 +12,10 @@ class OutputBitStream {
 		bytes.reserve((initialBitCapacity + 7) / 8);
 	}
 
-	OutputBitStream(std::vector<uint8_t> bytes) : bytes(bytes) {}
+	OutputBitStream(std::vector<uint8_t> bytes) : bytes(bytes) {
+		// Ensure the given vector is empty
+		bytes.clear();
+	}
 
 	inline void WriteBit(uint8_t bit) {
 		auto byteIndex = bitLength / 8;
