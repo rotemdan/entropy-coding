@@ -33,8 +33,8 @@ class BinaryRangeANSCoder {
 			throw std::exception("Probability of 1 must be between 0.0 and 1.0.");
 		}
 
-		if (totalRangeBitWidth < 1 || totalRangeBitWidth > 24) {
-			throw std::exception("Total range bit width must be between 1 and 24 (inclusive).");
+		if (totalRangeBitWidth < 2 || totalRangeBitWidth > 24) {
+			throw std::exception("Total range bit width must be between 2 and 24 (inclusive).");
 		}
 
 		// Probability of symbol 0
