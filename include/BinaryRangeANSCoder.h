@@ -281,7 +281,7 @@ class BinaryRangeANSCoder {
 	// Looks up encoder transition in the table.
 	// Doesn't check if the table is empty or if arguments are out of range.
 	inline uint32_t LookupEncoderStateTransitionFor(uint32_t state, uint8_t symbol) {
-		return encoderStateTransitionTable[(state * 2) + symbol];
+		return encoderStateTransitionTable[(uint64_t(state) * 2) + symbol];
 	}
 
 	// Looks up decoder transition in the table.
