@@ -25,7 +25,7 @@ inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
 void Encode(BitArray& inputBitArray,
 			OutputBitStream& outputBitStream,
 			double probabilityOf1) {
-				
+
 	// Input bit array length
 	auto inputBitLength = inputBitArray.BitLength();
 
@@ -165,7 +165,7 @@ void Decode(BitArray& inputBitArray,
 	int64_t writePosition = 0;
 
 	// Outputs a bit
-	auto outputBit = [&](uint8_t bit) { outputBitArray.WriteBit(bit, writePosition++); };
+	auto outputBit = [&](uint8_t bit) { outputBitArray.WriteBitAt(writePosition++, bit); };
 
 	// Initialize value
 	{

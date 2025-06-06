@@ -162,7 +162,7 @@ class BinaryRangeANSCoder {
 			state = stateTransitionResult.state;
 
 			// Output the decoded symbol
-			outputBitArray.WriteBit(stateTransitionResult.symbol, writePosition);
+			outputBitArray.WriteBitAt(writePosition, stateTransitionResult.symbol);
 		}
 	}
 
@@ -225,7 +225,7 @@ class BinaryRangeANSCoder {
 
 			state = stateTransitionResult.state;
 
-			outputBitArray.WriteBit(stateTransitionResult.symbol, writePosition);
+			outputBitArray.WriteBitAt(writePosition, stateTransitionResult.symbol);
 		}
 	}
 

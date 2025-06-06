@@ -14,7 +14,7 @@ class OutputBitStream {
 
 	OutputBitStream(std::vector<uint8_t> bytes) : bytes(bytes) {}
 
-	void WriteBit(uint8_t bit) {
+	inline void WriteBit(uint8_t bit) {
 		auto byteIndex = bitLength / 8;
 		auto bitIndexInByte = bitLength % 8;
 

@@ -11,7 +11,7 @@ class BitArray {
 	BitArray(uint8_t* bytes, int64_t bitLength)
 		: bytes(bytes), bitLength(bitLength) {}
 
-	uint8_t ReadBitAt(int64_t bitReadPosition) {
+	inline uint8_t ReadBitAt(int64_t bitReadPosition) {
 		auto byteIndex = bitReadPosition / 8;
 		auto bitIndexInByte = bitReadPosition % 8;
 
@@ -20,7 +20,7 @@ class BitArray {
 		return bit;
 	}
 
-	void WriteBit(uint8_t bitValue, int64_t bitWritePosition) {
+	inline void WriteBitAt(int64_t bitWritePosition, uint8_t bitValue) {
 		auto byteIndex = bitWritePosition / 8;
 		auto bitIndexInByte = bitWritePosition % 8;
 
