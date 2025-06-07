@@ -3,55 +3,58 @@
 #include "BitArray.h"
 #include "OutputBitStream.h"
 #include "Utilities.h"
+#include "FastUint32MultiplicationByFraction.h"
+
+#include <exception>
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 // Binary arithmetic coder. Uses fixed-point integer arithmetic.
 //////////////////////////////////////////////////////////////////////////////////////////////
 namespace BinaryArithmeticCoder {
 
-// Total range bit width. Cannot be higher than 32 bits.
-inline constexpr uint8_t totalRangeBitWidth = 32;
+// Range constants. Map the [0.0, 1.0) fractional range to unsigned 32-bit integers.
 
-// Range constants. Map the [0.0, 1.0) fractional range to integers.
+// Range bit width. Cannot be higher than 32.
+inline constexpr int64_t totalRangeBitWidth = 32;
+
+// Lowest and highest range values
 inline constexpr uint64_t lowest = 0;
 inline constexpr uint64_t highest = 1ULL << totalRangeBitWidth;
-inline constexpr double highestAsDouble = double(highest);
 
+// Quarter, half and three quarters range values
 inline constexpr uint64_t quarterRange = highest / 4;
 inline constexpr uint64_t halfRange = highest / 2;
 inline constexpr uint64_t threeQuartersRange = highest - quarterRange;
-
-static uint64_t ComputeFixedPointMultiplierFor(double fractionBetween0And1) {
-	// Compute the multiplier
-	uint64_t multiplier = uint64_t(fractionBetween0And1 * highestAsDouble);
-
-	// Ensure multiplier cannot equal highest value to prevent potential unsigned overflow
-	// after multiplication.
-	multiplier = EntropyCodingUtilities::clip(multiplier, 0ULL, highest - 1);
-
-	return multiplier;
-}
 
 // Encode message bits
 void Encode(BitArray& inputBitArray,
 			OutputBitStream& outputBitStream,
 			double probabilityOf1) {
 
+	if (probabilityOf1 < 0.0 || probabilityOf1 > 1.0) {
+		throw std::exception("Probability must be between 0.0 and 1.0 (inclusive)");
+	}
+
 	// Input bit array length
-	auto inputBitLength = inputBitArray.BitLength();
+	int64_t inputBitLength = inputBitArray.BitLength();
 
 	// Probability of 0 symbol
 	double probabilityOf0 = 1.0 - probabilityOf1;
 
-	// Fixed-point multiplier for the probability of 0
-	uint64_t probabilityOf0FixedPointMultiplier = ComputeFixedPointMultiplierFor(probabilityOf0);
+	// Fast multiplication for the probability of 0
+	FastUint32MultiplicationByFraction fastMultiplicationByProbabilityOf0(probabilityOf0);
 
-	// Current interval
-	uint64_t low = lowest;
-	uint64_t high = highest;
+	// Current interval.
+	//
+	// Interval length must be smaller than 2^32 to sensure the fast multiplication to produce
+	// correct results for the special case where p0 = 1.0.
+	//
+	// We ensure that by initializing `high = highest - 1`.
+	uint32_t low = lowest;
+	uint32_t high = highest - 1;
 
 	// Pending bit count
-	uint64_t pendingBitCount = 0;
+	int64_t pendingBitCount = 0;
 
 	// Read position
 	int64_t readPosition = 0;
@@ -77,18 +80,20 @@ void Encode(BitArray& inputBitArray,
 
 			// Calculate the boundary between symbols 0 and 1 within the current interval
 			// This is the point where the sub-interval for 0 ends and 1 begins
+
+			// Compute interval length
+			uint32_t intervalLength = high - low;
+
+			// Compute the lower subinterval length
 			//
-			// The boundary is computed via fast fixed-point arithmetic.
+			// Slow version:
+			// uint32_t lowerSubintervalLength = uint32_t(intervalLength * probabilityOf0);
 			//
-			// To compute the sub-interval length, the current interval length is multiplied by
-			// a precomputed integer multiplier equal to `highest * probabilityOf0`
-			// and then divided by `highest` via a right shift by `totalRangeBitWidth`,
-			// since `highest = 1 << totalRangeBitWidth`.
-			//
-			// The boundary is then computed as `low + lowerSubintervalLength`
-			uint64_t intervalLength = high - low;
-			uint64_t lowerSubintervalLength = (intervalLength * probabilityOf0FixedPointMultiplier) >> totalRangeBitWidth;
-			uint64_t boundary = low + lowerSubintervalLength;
+			// Fast version using fixed-point arithmetic:
+			uint32_t lowerSubintervalLength = fastMultiplicationByProbabilityOf0.Multiply(intervalLength);
+
+			// Compute the boundary
+			uint32_t boundary = low + lowerSubintervalLength;
 
 			if (inputBit == 0) {
 				high = boundary;  // New interval is [low, boundary)
@@ -169,24 +174,28 @@ void Decode(BitArray& inputBitArray,
 			BitArray& outputBitArray,
 			double probabilityOf1) {
 
+	if (probabilityOf1 < 0.0 || probabilityOf1 > 1.0) {
+		throw std::exception("Probability must be between 0.0 and 1.0");
+	}
+
 	// Input bit array length
-	auto inputBitLength = inputBitArray.BitLength();
+	int64_t inputBitLength = inputBitArray.BitLength();
 
 	// Output bit array length
-	auto outputBitLength = outputBitArray.BitLength();
+	int64_t outputBitLength = outputBitArray.BitLength();
 
 	// Probability of 0 symbol
 	double probabilityOf0 = 1.0 - probabilityOf1;
 
-	// Fixed-point multiplier for the probability of 0
-	uint64_t probabilityOf0FixedPointMultiplier = ComputeFixedPointMultiplierFor(probabilityOf0);
+	// Fast multiplication for the probability of 0
+	FastUint32MultiplicationByFraction fastMultiplicationByProbabilityOf0(probabilityOf0);
 
 	// Current interval
-	uint64_t low = lowest;
-	uint64_t high = highest;
+	uint32_t low = lowest;
+	uint32_t high = highest - 1;
 
 	// Current value derived from the input bits
-	uint64_t value = lowest;
+	uint32_t value = lowest;
 
 	// Read and write positions
 	int64_t readPosition = 0;
@@ -198,7 +207,7 @@ void Decode(BitArray& inputBitArray,
 	// Initialize value
 	{
 		// Determine initial bit count
-		auto initialBitCount = inputBitLength >= totalRangeBitWidth ? totalRangeBitWidth : inputBitLength;
+		int64_t initialBitCount = inputBitLength >= totalRangeBitWidth ? totalRangeBitWidth : inputBitLength;
 
 		// Fill value with initial bits
 		while (readPosition < initialBitCount) {
@@ -216,9 +225,9 @@ void Decode(BitArray& inputBitArray,
 		{
 			// Calculate the boundary between symbols 0 and 1 within the current interval
 			// This is the point where the sub-interval for 0 ends and 1 begins
-			uint64_t intervalLength = high - low;
-			uint64_t lowerSubintervalLength = (intervalLength * probabilityOf0FixedPointMultiplier) >> totalRangeBitWidth;
-			uint64_t boundary = low + lowerSubintervalLength;
+			uint32_t intervalLength = high - low;
+			uint32_t lowerSubintervalLength = fastMultiplicationByProbabilityOf0.Multiply(intervalLength);
+			uint32_t boundary = low + lowerSubintervalLength;
 
 			// Determine the symbol based on where 'value' falls
 			if (value < boundary) {
