@@ -6,7 +6,7 @@
 #include <exception>
 
 // Uses fixed-point arithmetic to compute `x * fraction`
-// where `x` is a uint32 and `fraction` is between 0.0 and 1.0
+// where `x` is a uint32 and `fraction` is a floating point value between 0.0 and 1.0
 class FastUint32MultiplicationByFraction {
    private:
 	uint64_t scaledMultiplier;
@@ -24,7 +24,14 @@ class FastUint32MultiplicationByFraction {
 	}
 
 	uint32_t Multiply(uint32_t multiplicand) {
-		// Efficiently computes (multiplicand * (fractionBetween0And1 * scaleFactor)) / scaleFactor
+		// Efficiently computes:
+		// multiplicand * fractionBetween0And1
+		//
+		// Using:
+		// (multiplicand * uint64_t(fractionBetween0And1 * scaleFactor)) / scaleFactor
+		//
+		// Where scaleFactor is a power of two - here 2^32,
+		// enabling the use of a right shift instead of division.
 		return uint32_t((multiplicand * scaledMultiplier) >> 32);
 	}
 };
