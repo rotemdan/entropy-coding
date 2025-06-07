@@ -12,6 +12,10 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
 namespace BinaryArithmeticCoder {
 
+using namespace EntropyCodingUtilities;
+
+inline constexpr double probabilityEpsilon = 1e-9;
+
 // Range constants. Map the [0.0, 1.0) fractional range to unsigned 32-bit integers.
 
 // Range bit width. Cannot be higher than 32.
@@ -31,9 +35,8 @@ void Encode(BitArray& inputBitArray,
 			OutputBitStream& outputBitStream,
 			double probabilityOf1) {
 
-	if (probabilityOf1 < 0.0 || probabilityOf1 > 1.0) {
-		throw std::exception("Probability must be between 0.0 and 1.0 (inclusive)");
-	}
+	// Ensure probability is within the range [0.0 + epsilon, 1.0 - epsilon]
+	probabilityOf1 = clip(probabilityOf1, 0.0 + probabilityEpsilon, 1.0 - probabilityEpsilon);
 
 	// Input bit array length
 	int64_t inputBitLength = inputBitArray.BitLength();
@@ -46,10 +49,7 @@ void Encode(BitArray& inputBitArray,
 
 	// Current interval.
 	//
-	// Interval length must always be smaller than 2^32 to ensure the fast multiplication produces
-	// correct results for the special case where p0 = 1.0, and uint32 range is never overflown.
-	//
-	// We ensure that by initializing `high = highest - 1`.
+	// To ensure no overflow for 32 bits range, we initialize `high = highest - 1`.
 	uint32_t low = lowest;
 	uint32_t high = highest - 1;
 
@@ -174,9 +174,8 @@ void Decode(BitArray& inputBitArray,
 			BitArray& outputBitArray,
 			double probabilityOf1) {
 
-	if (probabilityOf1 < 0.0 || probabilityOf1 > 1.0) {
-		throw std::exception("Probability must be between 0.0 and 1.0");
-	}
+	// Ensure probability is within the range [0.0 + epsilon, 1.0 - epsilon]
+	probabilityOf1 = clip(probabilityOf1, 0.0 + probabilityEpsilon, 1.0 - probabilityEpsilon);
 
 	// Input bit array length
 	int64_t inputBitLength = inputBitArray.BitLength();
