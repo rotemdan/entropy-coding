@@ -46,7 +46,7 @@ void Encode(BitArray& inputBitArray,
 
 	// Current interval.
 	//
-	// Interval length must be smaller than 2^32 to sensure the fast multiplication to produce
+	// Interval length must always be smaller than 2^32 to ensure the fast multiplication produces
 	// correct results for the special case where p0 = 1.0.
 	//
 	// We ensure that by initializing `high = highest - 1`.
