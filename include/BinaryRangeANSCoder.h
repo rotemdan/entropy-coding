@@ -5,6 +5,8 @@
 #include "Utilities.h"
 #include "FastUint32Division.h"
 
+#include <exception>
+
 using namespace EntropyCodingUtilities;
 
 struct StateAndSymbol {
