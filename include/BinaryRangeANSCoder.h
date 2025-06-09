@@ -3,7 +3,7 @@
 #include "BitArray.h"
 #include "OutputBitStream.h"
 #include "Utilities.h"
-#include "FastUint32Division.h"
+#include "FastUint31Division.h"
 
 #include <exception>
 
@@ -24,7 +24,7 @@ class BinaryRangeANSCoder {
 	uint32_t frequencyOf[2];
 	uint32_t cumulativeFrequencyOf[2];
 	uint32_t encoderFlushThresholdOf[2];
-	FastUint32Division fastDivisionForFrequencyOf[2];
+	FastUint31Division fastDivisionForFrequencyOf[2];
 
 	std::vector<uint32_t> encoderStateTransitionTable;
 	std::vector<StateAndSymbol> decoderStateTransitionTable;
@@ -35,8 +35,8 @@ class BinaryRangeANSCoder {
 			throw std::exception("Probability of 1 must be between 0.0 and 1.0.");
 		}
 
-		if (totalRangeBitWidth < 2 || totalRangeBitWidth > 24) {
-			throw std::exception("Total range bit width must be between 2 and 24 (inclusive).");
+		if (totalRangeBitWidth < 2 || totalRangeBitWidth > 23) {
+			throw std::exception("Total range bit width must be between 2 and 23 (inclusive).");
 		}
 
 		// Probability of symbol 0
@@ -44,10 +44,10 @@ class BinaryRangeANSCoder {
 
 		// Total size of the integer range, in bits.
 		// Determines how "quantized" the symbol probabilities would be.
-		// Common values are 8, 12, 16, 20 and 24 bits.
+		// Recommended widths are between 6 and 20 bits.
 		//
-		// Maximum supported value is 24, since it implies the state would use the full 32-bit
-		// unsigned integer range.
+		// Maximum supported value is 23, since it implies the state would use up to 31 bits of
+		// unsigned integer range (maximum supported by fast division).
 		//
 		// Larger range means more expensive table construction, and larger table memory size.
 		// Table size is 256 times larger than the range, or 8 bits more.
@@ -78,8 +78,8 @@ class BinaryRangeANSCoder {
 		encoderFlushThresholdOf[1] = frequencyOf[1] * 256;
 
 		// Lookup table for fast division object for the symbol frequencies
-		fastDivisionForFrequencyOf[0] = FastUint32Division(frequencyOf[0]);
-		fastDivisionForFrequencyOf[1] = FastUint32Division(frequencyOf[1]);
+		fastDivisionForFrequencyOf[0] = FastUint31Division(frequencyOf[0]);
+		fastDivisionForFrequencyOf[1] = FastUint31Division(frequencyOf[1]);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////

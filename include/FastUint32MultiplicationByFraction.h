@@ -30,7 +30,7 @@ class FastUint32MultiplicationByFraction {
 		// Using:
 		// (multiplicand * uint64_t(fractionBetween0And1 * scaleFactor)) / scaleFactor
 		//
-		// Where scaleFactor is a power of two - here 2^32,
+		// Where scaleFactor is a power of two: here 2^32,
 		// enabling the use of a right shift instead of division.
 		return uint32_t((multiplicand * scaledMultiplier) >> 32);
 	}

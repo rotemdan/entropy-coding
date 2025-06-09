@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <exception>
 
 #if __cplusplus >= 202002L
 #include <bit>
@@ -12,11 +13,16 @@ struct QuotientAndRemainderUint32 {
 };
 
 // Uses precomputed "magic numbers" to efficiently compute division
-// of unsigned 32-bit integers, using only a single 64-bit multiplication and a single right shift.
+// of unsigned 31-bit integers, using only a single 64-bit multiplication and a single right shift.
+//
+// The algorithm only works correctly for numerators and divisors between 0 and 2^31.
+//
+// Modifying it to produce correct results for numerators or divisors between 2^31 and 2^32,
+// would significantly increase its complexity.
 //
 // Based on ideas from the book:
 // "Hacker's Delight" (Chapter 10), by Henry S. Warren, Jr. (2002)
-class FastUint32Division {
+class FastUint31Division {
    private:
     uint32_t divisor;
 
@@ -24,13 +30,13 @@ class FastUint32Division {
 	uint8_t shiftAmount;
 
    public:
-    FastUint32Division() {
+    FastUint31Division() {
 		divisor = 0;
 		multiplier = 0;
 		shiftAmount = 0;
 	}
 
-	FastUint32Division(uint32_t divisor) {
+	FastUint31Division(uint32_t divisor) {
 		this->divisor = divisor;
 
 		// If divisor is 0, set magic values that produce a result of 0 for any numerator
@@ -41,19 +47,17 @@ class FastUint32Division {
 			return;
 		}
 
-		// Get the exponent of closest power of two greater or equal to the divisor
-		auto exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor =
-			GetExponentOfClosestPowerOfTwoGreaterOrEqualTo(divisor);
-
-		if (divisor == 1ULL << exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor) {
-			// If divisor is power of 2, set simple magic values
-			multiplier = 1;
-			shiftAmount = exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor;
-		} else {
-			// Compute a "magic" multiplier and shift amount
-			shiftAmount = 32 + (exponentOfClosestPowerOfTwoGreaterOrEqualToDivisor - 1);
-			multiplier = ((1ULL << shiftAmount) / divisor) + 1;
+		if (divisor >= (1ULL << 31)) {
+			throw std::exception("Divisor can't be greater or equal to 2^31");
 		}
+
+		// Get the exponent of closest power of two greater or equal to the divisor
+		auto divisorBitWidth = GetExponentOfClosestPowerOfTwoGreaterOrEqualTo(divisor);
+
+		// Compute a "magic" multiplier and shift amount
+		shiftAmount = 32 + divisorBitWidth;
+
+		multiplier =  ((1ULL << shiftAmount) + (divisor - 1)) / divisor;
 	}
 
 	inline uint32_t Divide(uint32_t numerator) {
